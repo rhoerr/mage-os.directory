@@ -12,10 +12,10 @@ choices is recorded in [decisions.md](decisions.md).
 
 ```
 PackageMaven export ─┐
-                     ├─→ pipeline (GitHub Actions, daily + on curation merge)
-GitHub API ──────────┤      fetch → merge curation → rank → validate → emit
+                     ├─→ pipeline (GitHub Actions, daily + on data/config merge)
+GitHub API ──────────┤      fetch → merge trust data → rank → validate → emit
                      │
-data/curation/*.json ┘
+data/vendors/*.json ─┘
                             │
                             ▼
               /api/v1/feed.json  +  /api/v1/packages/<vendor>/<name>.json
@@ -59,24 +59,24 @@ the pipeline simple and reliable.
 Both are nullable. A GitHub failure never fails the build; affected packages simply
 render without a README or star count. Non-GitHub repositories get no README/stars in v1.
 
-### Mage-OS curation overlay (trust layer)
+### Mage-OS vendor trust files (trust layer)
 
-Human-curated trust data lives in this repository as `data/curation/<vendor>.json` —
-one file per vendor, edited by pull request. See [Curation overlay](#curation-overlay).
+Human-curated trust data lives in this repository as `data/vendors/<vendor>.json` —
+one file per vendor, edited by pull request. See [Vendor trust files](#vendor-trust-files).
 
 ## Pipeline
 
-A TypeScript script under `pipeline/`, run by GitHub Actions:
+A TypeScript script under `src/pipeline/`, run by GitHub Actions:
 
 - **Triggers:** daily cron, push to `main` touching `data/**` or `config/**`, and manual
   `workflow_dispatch`.
 - **Stages:**
   1. Fetch the PackageMaven export.
-  2. Load and validate `data/curation/*.json` (invalid curation data fails the build —
+  2. Load and validate `data/vendors/*.json` (invalid trust data fails the build —
      it is our own data and CI on the PR should have caught it).
   3. Fetch GitHub READMEs (sanitized to HTML with a strict allowlist; relative links and
      images rewritten to absolute raw URLs) and stars.
-  4. Merge into canonical package records. Precedence: curation overrides → PackageMaven.
+  4. Merge into canonical package records. Precedence: trust-file overrides → PackageMaven.
   5. Compute the ranking score (see [Ranking](#ranking)).
   6. Validate the assembled output against the schema (the pipeline validates its own
      output before publishing).
@@ -104,7 +104,7 @@ READMEs live only in the per-package detail files so the feed stays small (rough
 
 ## Feed schema (sketch)
 
-Authoritative schemas will be Zod definitions in `schema/`, shared by the pipeline, the
+Authoritative schemas will be Zod definitions in `src/schema/`, shared by the pipeline, the
 site, and CI validation. Field-level sketch:
 
 ```ts
@@ -121,9 +121,9 @@ interface Feed {
 interface PackageSummary {
   name: string;                   // "acme/module-widget" (Packagist name)
   vendor: string;
-  displayName: string;            // curation override → PM friendly name
+  displayName: string;            // trust-file override → PM friendly name
   description: string;
-  categories: string[];           // canonical slugs; curation override wins
+  categories: string[];           // canonical slugs; trust-file override wins
   repositoryUrl: string | null;
   latestVersion: string | null;
   latestReleasedAt: string | null;
@@ -167,13 +167,13 @@ interface PackageDetail extends PackageSummary {
 Packages with a `hide`-severity warning keep their detail page (rendered with a prominent
 warning banner — no link rot) but are excluded from the default search results.
 
-## Curation overlay
+## Vendor trust files
 
-`data/curation/<vendor>.json`, one file per vendor:
+`data/vendors/<vendor>.json`, one file per vendor:
 
 ```json
 {
-  "$schema": "../../schemas/curation.schema.json",
+  "$schema": "../../schemas/vendor.schema.json",
   "vendor": "acme",
   "vendorName": "Acme Commerce",
   "url": "https://acme.example",
@@ -202,15 +202,15 @@ warning banner — no link rot) but are excluded from the default search results
 Rules, enforced by schema validation in CI:
 
 - Filename must equal the `vendor` field; all package keys must start with `<vendor>/`.
-- Referenced packages must exist in the PackageMaven index (curation decorates the
-  universe; it does not extend it).
+- Referenced packages must exist in the PackageMaven index (trust files decorate the
+  universe; they do not extend it).
 - Categories must exist in `data/categories.json`.
 - Warning severity is one of `info` (badge only), `derank` (ranking penalty), `hide`
   (excluded from default results).
 
-A formatter (`npm run format:curation`) normalizes key order and sorting for clean
+A formatter (`npm run format:vendors`) normalizes key order and sorting for clean
 diffs; CI runs it in `--check` mode and tells contributors the exact command to fix
-failures. `CODEOWNERS` on `data/curation/**` requires maintainer review, which is how
+failures. `CODEOWNERS` on `data/vendors/**` requires maintainer review, which is how
 partner-tier changes are guarded.
 
 ## Ranking
@@ -290,23 +290,24 @@ deferred; supported versions are displayed as a field.
 One npm package — no workspaces, no monorepo tooling:
 
 ```
-package.json              # single package; scripts: pipeline, build, test, format:curation
-astro.config.mjs
-src/                      # Astro site (pages, components, the search island)
-pipeline/                 # pipeline entry + source fetchers + merge/rank/emit
-schema/                   # Zod schemas shared by pipeline, site, and CI
+package.json              # single package; scripts: pipeline, build, test, format:vendors
+astro.config.mjs          # srcDir set to src/site
+src/
+  site/                   # Astro site (pages, components, the search island)
+  pipeline/               # pipeline entry + source fetchers + merge/rank/emit
+  schema/                 # Zod schemas shared by pipeline, site, and CI
 data/
-  curation/<vendor>.json  # trust overlay
+  vendors/<vendor>.json   # vendor trust files (the trust overlay)
   categories.json         # canonical category taxonomy
 config/
   ranking.json            # tunable ranking weights
 schemas/
-  curation.schema.json    # generated from Zod, committed for editor $schema support
+  vendor.schema.json      # generated from Zod, committed for editor $schema support
 scripts/
-  format-curation.ts
+  format-vendors.ts
 .github/workflows/
   build-deploy.yml        # cron + data/config pushes + manual → build, deploy to Pages
-  ci.yml                  # PRs: typecheck, tests, curation validate + format check, build smoke
+  ci.yml                  # PRs: typecheck, tests, trust-file validate + format check, build smoke
 docs/
 ```
 
@@ -319,7 +320,7 @@ CNAME + Astro `site` config change.
 
 PackageMaven outreach starts immediately and runs in parallel; it gates only M4/M5.
 
-- **M0 — Scaffold:** package setup, Zod schemas, generated curation JSON Schema, config
+- **M0 — Scaffold:** package setup, Zod schemas, generated vendor-file JSON Schema, config
   files, CI skeleton. *Done when:* `npm test` is green.
 - **M1 — Pipeline on fixture data:** full pipeline running against a committed fixture
   feed (seeded from the archived PM contribution list). *Done when:* a valid, deterministic
@@ -327,9 +328,9 @@ PackageMaven outreach starts immediately and runs in parallel; it gates only M4/
 - **M2 — Site + island:** all routes, prerendered detail pages, embeddable bundle, Pages
   deploy live. *Done when:* search/filter/sort works on the fixture feed and the bundle
   mounts on a bare HTML demo page.
-- **M3 — Curation CI:** curation loading, formatter, CI jobs, CODEOWNERS, contributor
-  docs, 3–5 real vendor files. *Done when:* a malformed curation PR fails with a readable
-  error and a valid merge auto-redeploys.
+- **M3 — Trust-file CI:** trust-file loading, formatter, CI jobs, CODEOWNERS, contributor
+  docs, 3–5 real vendor files. *Done when:* a malformed vendor-file PR fails with a
+  readable error and a valid merge auto-redeploys.
 - **M4 — PackageMaven integration** *(gated on data access)*: real PM fetcher, quality
   tiers live in feed/UI/ranking, universe switches from fixture to live index.
 - **M5 — Launch** *(gated on M4, per project decision)*: ranking tuning with curators,
@@ -343,6 +344,6 @@ PackageMaven outreach starts immediately and runs in parallel; it gates only M4/
 2. **GitHub rate limits** on cold-cache README fetches — mitigated by ETag caching,
    GraphQL batching for stars, and an optional PAT secret.
 3. **README content is third-party HTML** — strict sanitization allowlist at build time;
-   the curation `hide` severity is the kill switch for abusive packages.
+   the `hide` warning severity is the kill switch for abusive packages.
 4. **Stale detail URLs** when packages leave the index — accepted in v1 (daily rebuild
    prunes files; Pages serves the 404 page).

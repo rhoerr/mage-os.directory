@@ -14,7 +14,7 @@ PackageMaven export ─┐
                      ├─→ daily pipeline → /api/v1/*.json → static site (GitHub Pages)
 GitHub (READMEs/★) ──┤
                      │
-data/curation/*.json ┘
+data/vendors/*.json ─┘
 ```
 
 - **[PackageMaven](https://package-maven.com/)** is the structural data backbone: it
@@ -22,10 +22,10 @@ data/curation/*.json ┘
   quality tiers, PHPStan levels, build status, and verified compatibility. The
   directory's universe is PackageMaven's index, with full attribution and links back.
 - **GitHub** supplies READMEs and stars at build time (optional, failure-tolerant).
-- **The Mage-OS curation overlay** — per-vendor JSON files in this repo, edited by pull
-  request — adds the trust layer: trusted-vendor badges, partner tiers, editorial picks,
-  and warnings that derank or hide problem packages.
-- A transparent, config-tunable **ranking** blends curation, quality, freshness, and
+- **Mage-OS vendor trust files** — per-vendor JSON files in `data/vendors/`, edited by
+  pull request — add the trust layer: trusted-vendor badges, partner tiers, editorial
+  picks, and warnings that derank or hide problem packages.
+- A transparent, config-tunable **ranking** blends trust, quality, freshness, and
   popularity into the default ordering, with the per-signal breakdown published in the
   feed.
 
@@ -39,12 +39,12 @@ The browse/search UI is also built as a standalone embeddable bundle
 - **Trust signals over completeness** — a curated, quality-tested universe rather than
   all of Packagist.
 - **Static and simple** — no servers to run; the whole system is a build artifact, and
-  curation is a pull request.
+  every trust-data change is a pull request.
 
 ## Documentation
 
-- **[Architecture](docs/architecture.md)** — data flow, pipeline, feed schema, curation
-  format, ranking model, site/UI design, milestones, risks.
+- **[Architecture](docs/architecture.md)** — data flow, pipeline, feed schema, vendor
+  trust file format, ranking model, site/UI design, milestones, risks.
 - **[Decision log](docs/decisions.md)** — what was chosen, why, and what was rejected.
 - **[PackageMaven data contract](docs/packagemaven-data-contract.md)** — the data-access
   proposal for PackageMaven's author.

@@ -44,15 +44,15 @@ packages would swamp quality signals).
 
 **Decision:** the directory lists exactly what PackageMaven indexes. Mage-OS trust data
 (trusted vendors, partner tiers, editorial picks, warnings) lives as per-vendor JSON
-files in this repo, edited by pull request, schema-validated in CI, guarded by
+files in `data/vendors/`, edited by pull request, schema-validated in CI, guarded by
 CODEOWNERS.
 
-**Why:** Git gives curation version history, review workflow, and accountability for
-free. Per-vendor files keep diffs small and merge conflicts rare. Warnings with
-`info`/`derank`/`hide` severities let curation correct the record without silently
+**Why:** Git gives the trust data version history, a review workflow, and accountability
+for free. Per-vendor files keep diffs small and merge conflicts rare. Warnings with
+`info`/`derank`/`hide` severities let curators correct the record without silently
 deleting pages.
 
-**Rejected:** a curation database/CMS (ops burden, loses PR review); curation extending
+**Rejected:** a trust database/CMS (ops burden, loses PR review); trust files extending
 the universe beyond PM's index (would need a second structural source for those
 packages — contradicts decision 2).
 
@@ -73,9 +73,9 @@ faster at this corpus size); server-side search (requires a server — decision 
 
 ## 5. Single npm package, no monorepo tooling
 
-**Decision:** one `package.json`; the Astro site, `pipeline/`, and `schema/` live in the
-same package. The embeddable UI bundle is a second build target (Vite library mode), not
-a second package.
+**Decision:** one `package.json`; the Astro site (`src/site/`), the pipeline
+(`src/pipeline/`), and the shared schemas (`src/schema/`) live in the same package. The
+embeddable UI bundle is a second build target (Vite library mode), not a second package.
 
 **Why:** keep it simple. `git clone && npm install && npm run build` must be the entire
 onboarding for a contributor base that is mostly PHP developers. Workspaces, pnpm, or
@@ -112,7 +112,7 @@ per-component breakdown published in the feed.
 
 **Why:** curators can tune ranking via a reviewable config-only PR, and "why is this
 package ranked here?" is always answerable from the published data. Deranking and
-hiding are explicit, auditable curation acts — never silent.
+hiding are explicit, auditable acts recorded in the trust files — never silent.
 
 ## 9. Launch gated on PackageMaven data
 
