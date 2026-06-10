@@ -6,7 +6,7 @@ significance. Full design context lives in [architecture.md](architecture.md).
 ## 1. Static pipeline + static site, no running server
 
 **Decision:** v1 is a GitHub Actions pipeline emitting versioned JSON artifacts, published
-with a prerendered Astro site on GitHub Pages. The JSON feed is the public API.
+with a prerendered Astro site on Cloudflare Pages. The JSON feed is the public API.
 
 **Why:** the catalog changes at most daily; nothing requires request-time computation.
 A static system has effectively zero ops burden, zero hosting cost, no auth/scaling/
@@ -123,10 +123,17 @@ All other milestones build and preview against fixture data.
 "quality: pending" on every package would undercut it. Project decision, accepted
 trade-off: PM outreach sits on the critical path.
 
-## 10. GitHub Pages now, custom domain later
+## 10. Cloudflare Pages, deployed from GitHub Actions
 
-**Decision:** ship under `github.io`; move to a `mage-os.org` subdomain when
-infrastructure/branding is settled (CNAME + one config change).
+**Decision:** host on Cloudflare Pages, with the GitHub Actions pipeline doing a
+wrangler direct upload of the built site + JSON artifacts. Ship under `*.pages.dev`;
+move to a `mage-os.org` subdomain when infrastructure/branding is settled (custom-domain
+attachment + one config change).
 
-**Why:** zero-cost, zero-coordination start; the move later is trivial and the feed
-contract is unaffected.
+**Why:** Mage-OS already runs on Cloudflare, so this matches existing infrastructure
+and ops knowledge. Direct upload keeps the build in Actions, where the cron schedule
+and external data fetches live; Cloudflare's git-integration builds can't do that. Free
+tier, global CDN, and the later domain move is trivial with the feed contract unaffected.
+
+**Rejected:** GitHub Pages (works, but adds a second hosting platform to operate when
+the rest of the infrastructure is on Cloudflare).

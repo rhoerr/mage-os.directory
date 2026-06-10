@@ -7,11 +7,11 @@ a public website first, designed for embedding into the Mage-OS admin panel late
 
 There is no backend service. A scheduled GitHub Actions pipeline aggregates package data
 into versioned static JSON, and publishes it together with a prerendered catalog site on
-GitHub Pages. The JSON feed *is* the public API.
+Cloudflare Pages. The JSON feed *is* the public API.
 
 ```
 PackageMaven export ─┐
-                     ├─→ daily pipeline → /api/v1/*.json → static site (GitHub Pages)
+                     ├─→ daily pipeline → /api/v1/*.json → static site (Cloudflare Pages)
 GitHub (READMEs/★) ──┤
                      │
 data/vendors/*.json ─┘

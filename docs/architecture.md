@@ -3,7 +3,7 @@
 The Mage-OS Extension Directory is a **static data pipeline plus a static catalog site**.
 There is no running backend service. A scheduled GitHub Actions job aggregates package
 data into versioned JSON artifacts, and those artifacts are published together with a
-prerendered website on GitHub Pages. The JSON feed *is* the public API.
+prerendered website on Cloudflare Pages. The JSON feed *is* the public API.
 
 This document is the implementation reference for v1. The reasoning behind the major
 choices is recorded in [decisions.md](decisions.md).
@@ -21,7 +21,7 @@ data/vendors/*.json ─┘
               /api/v1/feed.json  +  /api/v1/packages/<vendor>/<name>.json
                             │
                             ▼
-              Astro build (prerendered pages + search island) → GitHub Pages
+              Astro build (prerendered pages + search island) → Cloudflare Pages
 ```
 
 ## Data sources
@@ -81,7 +81,7 @@ A TypeScript script under `src/pipeline/`, run by GitHub Actions:
   6. Validate the assembled output against the schema (the pipeline validates its own
      output before publishing).
   7. Emit deterministic, sorted JSON to `dist/api/v1/`, then build the site and deploy
-     everything to GitHub Pages.
+     everything to Cloudflare Pages.
 - **Full rebuild every run.** At this corpus size a run takes minutes, and full rebuilds
   eliminate cache-invalidation bugs. The HTTP ETag cache is the only incrementalism.
 - **Failure semantics:** if the PackageMaven fetch fails, the pipeline downloads the
@@ -302,15 +302,22 @@ data/                     # everything contributors edit by PR
   categories.json         # canonical category taxonomy
   ranking.json            # tunable ranking weights
 .github/workflows/
-  build-deploy.yml        # cron + data pushes + manual → build, deploy to Pages
+  build-deploy.yml        # cron + data pushes + manual → build, deploy to Cloudflare Pages
   ci.yml                  # PRs: typecheck, tests, trust-file validate + format check, build smoke
 docs/
 ```
 
 ## Hosting
 
-GitHub Pages under `github.io` initially; moving to a `mage-os.org` subdomain later is a
-CNAME + Astro `site` config change.
+Cloudflare Pages, matching the Cloudflare infrastructure Mage-OS already uses. The
+GitHub Actions pipeline builds everything, then deploys with a wrangler direct upload
+(`cloudflare/wrangler-action`, `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`
+secrets). Cloudflare's own git-integration builds are deliberately not used: the build
+is cron-triggered and fetches external data, so it has to run in Actions.
+
+Ships under the project's `*.pages.dev` URL initially; moving to a `mage-os.org`
+subdomain later is a custom-domain attachment in Cloudflare plus the Astro `site`
+config change.
 
 ## Milestones
 
@@ -321,9 +328,9 @@ PackageMaven outreach starts immediately and runs in parallel; it gates only M4/
 - **M1 — Pipeline on fixture data:** full pipeline running against a committed fixture
   feed (seeded from the archived PM contribution list). *Done when:* a valid, deterministic
   `/api/v1/` output is produced and snapshot-tested.
-- **M2 — Site + island:** all routes, prerendered detail pages, embeddable bundle, Pages
-  deploy live. *Done when:* search/filter/sort works on the fixture feed and the bundle
-  mounts on a bare HTML demo page.
+- **M2 — Site + island:** all routes, prerendered detail pages, embeddable bundle,
+  Cloudflare Pages deploy live. *Done when:* search/filter/sort works on the fixture feed
+  and the bundle mounts on a bare HTML demo page.
 - **M3 — Trust-file CI:** trust-file loading, formatter, CI jobs, CODEOWNERS, contributor
   docs, 3–5 real vendor files. *Done when:* a malformed vendor-file PR fails with a
   readable error and a valid merge auto-redeploys.
@@ -342,4 +349,4 @@ PackageMaven outreach starts immediately and runs in parallel; it gates only M4/
 3. **README content is third-party HTML** — strict sanitization allowlist at build time;
    the `hide` warning severity is the kill switch for abusive packages.
 4. **Stale detail URLs** when packages leave the index — accepted in v1 (daily rebuild
-   prunes files; Pages serves the 404 page).
+   prunes files; Cloudflare Pages serves the 404 page).
