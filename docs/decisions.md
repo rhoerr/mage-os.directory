@@ -107,10 +107,10 @@ per package.
 ## 8. Transparent, config-tunable ranking
 
 **Decision:** default ordering is a weighted score over editorial/partner/trust/quality/
-freshness/popularity signals, with weights in `config/ranking.json` and the
+freshness/popularity signals, with weights in `data/ranking.json` and the
 per-component breakdown published in the feed.
 
-**Why:** curators can tune ranking via a reviewable config-only PR, and "why is this
+**Why:** curators can tune ranking via a reviewable one-file PR, and "why is this
 package ranked here?" is always answerable from the published data. Deranking and
 hiding are explicit, auditable acts recorded in the trust files — never silent.
 

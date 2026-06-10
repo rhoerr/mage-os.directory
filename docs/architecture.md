@@ -12,7 +12,7 @@ choices is recorded in [decisions.md](decisions.md).
 
 ```
 PackageMaven export ─┐
-                     ├─→ pipeline (GitHub Actions, daily + on data/config merge)
+                     ├─→ pipeline (GitHub Actions, daily + on data merge)
 GitHub API ──────────┤      fetch → merge trust data → rank → validate → emit
                      │
 data/vendors/*.json ─┘
@@ -68,7 +68,7 @@ one file per vendor, edited by pull request. See [Vendor trust files](#vendor-tr
 
 A TypeScript script under `src/pipeline/`, run by GitHub Actions:
 
-- **Triggers:** daily cron, push to `main` touching `data/**` or `config/**`, and manual
+- **Triggers:** daily cron, push to `main` touching `data/**`, and manual
   `workflow_dispatch`.
 - **Stages:**
   1. Fetch the PackageMaven export.
@@ -173,7 +173,7 @@ warning banner — no link rot) but are excluded from the default search results
 
 ```json
 {
-  "$schema": "../../schemas/vendor.schema.json",
+  "$schema": "../vendor.schema.json",
   "vendor": "acme",
   "vendorName": "Acme Commerce",
   "url": "https://acme.example",
@@ -216,7 +216,7 @@ partner-tier changes are guarded.
 ## Ranking
 
 The default ordering is a transparent weighted score computed at build time. Weights
-live in `config/ranking.json` so curators can tune ranking with a config-only PR:
+live in `data/ranking.json` so curators can tune ranking with a one-file PR:
 
 ```json
 {
@@ -294,19 +294,15 @@ package.json              # single package; scripts: pipeline, build, test, form
 astro.config.mjs          # srcDir set to src/site
 src/
   site/                   # Astro site (pages, components, the search island)
-  pipeline/               # pipeline entry + source fetchers + merge/rank/emit
+  pipeline/               # pipeline entry + source fetchers + merge/rank/emit + dev tools
   schema/                 # Zod schemas shared by pipeline, site, and CI
-data/
+data/                     # everything contributors edit by PR
   vendors/<vendor>.json   # vendor trust files (the trust overlay)
+  vendor.schema.json      # generated from src/schema, committed so editors validate trust files
   categories.json         # canonical category taxonomy
-config/
   ranking.json            # tunable ranking weights
-schemas/
-  vendor.schema.json      # generated from Zod, committed for editor $schema support
-scripts/
-  format-vendors.ts
 .github/workflows/
-  build-deploy.yml        # cron + data/config pushes + manual → build, deploy to Pages
+  build-deploy.yml        # cron + data pushes + manual → build, deploy to Pages
   ci.yml                  # PRs: typecheck, tests, trust-file validate + format check, build smoke
 docs/
 ```
@@ -320,8 +316,8 @@ CNAME + Astro `site` config change.
 
 PackageMaven outreach starts immediately and runs in parallel; it gates only M4/M5.
 
-- **M0 — Scaffold:** package setup, Zod schemas, generated vendor-file JSON Schema, config
-  files, CI skeleton. *Done when:* `npm test` is green.
+- **M0 — Scaffold:** package setup, Zod schemas, generated vendor-file JSON Schema, seed
+  data files (categories, ranking weights), CI skeleton. *Done when:* `npm test` is green.
 - **M1 — Pipeline on fixture data:** full pipeline running against a committed fixture
   feed (seeded from the archived PM contribution list). *Done when:* a valid, deterministic
   `/api/v1/` output is produced and snapshot-tested.
