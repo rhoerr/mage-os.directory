@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import MiniSearch from 'minisearch';
 import { isNewer } from '../shared/version.js';
+import { PACKAGE_NAME_PATTERN, VERSION_PATTERN } from '../shared/safe-strings.js';
 import type {
   DirectoryFilters,
   Feed,
@@ -44,9 +45,17 @@ const INSTALL_FILTERS: Array<{ key: '' | InstallState; label: string }> = [
   { key: 'not-installed', label: 'Not installed' },
 ];
 
+/**
+ * The copyable `composer require` line. Names and versions are re-validated
+ * here even though the pipeline validates them at build time: the mounted
+ * bundle accepts any feedUrl, and this string is pasted into a shell — an
+ * entry that fails the safe patterns is dropped rather than quoted.
+ */
 export function composerCommand(entries: Array<{ name: string; version: string | null }>): string {
-  const args = entries.map((e) => (e.version ? `${e.name}:^${e.version}` : e.name));
-  return `composer require ${args.join(' ')}`;
+  const args = entries
+    .filter((e) => PACKAGE_NAME_PATTERN.test(e.name))
+    .map((e) => (e.version && VERSION_PATTERN.test(e.version) ? `${e.name}:^${e.version}` : e.name));
+  return args.length > 0 ? `composer require ${args.join(' ')}` : '';
 }
 
 const QUALITY_LABELS: Record<string, string> = {

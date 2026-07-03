@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PACKAGE_NAME_PATTERN, VERSION_PATTERN } from '../shared/safe-strings.js';
 
 /** Current published schema version for /api/v1 artifacts. */
 export const SCHEMA_VERSION = 1 as const;
@@ -7,7 +8,7 @@ export const SCHEMA_VERSION = 1 as const;
 export const packageName = z
   .string()
   .regex(
-    /^[a-z0-9]([_.-]?[a-z0-9]+)*\/[a-z0-9](([_.]|-{1,2})?[a-z0-9]+)*$/,
+    PACKAGE_NAME_PATTERN,
     'must be a valid Packagist package name (vendor/package, lowercase)',
   );
 
@@ -20,6 +21,23 @@ export const vendorSlug = z
 export const categorySlug = z
   .string()
   .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'must be a lowercase kebab-case slug');
+
+/**
+ * A link safe to render as an href. Plain z.url() accepts any parseable URL —
+ * including javascript: — and repository/evidence/docs URLs end up as <a href>
+ * on the site and in the embeddable UI, so restrict to web protocols.
+ */
+export const httpUrl = z.url({ protocol: /^https?$/ });
+
+/**
+ * A package or Magento version string, e.g. "1.2.3", "v2.0.0-beta.1",
+ * "dev-feature/foo". Deliberately narrow: these strings are embedded in the
+ * copyable `composer require` command, so shell metacharacters (spaces, ;,
+ * &, $, quotes, backticks…) must never pass validation.
+ */
+export const versionString = z
+  .string()
+  .regex(VERSION_PATTERN, 'version may only contain letters, digits, and . _ + / - (max 100 chars)');
 
 /** ISO 8601 timestamp. */
 export const isoDateTime = z.iso.datetime();

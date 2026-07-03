@@ -1,4 +1,12 @@
 # Cloudflare Pages response headers.
+# Baseline hardening for every response. The site is embedded via the JS
+# bundle (never iframed), so denying framing costs nothing and blocks
+# clickjacking overlays on the copyable composer commands.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+
 # CORS-open /api/v1/* is what lets the embeddable bundle (Magento admin, other
 # origins) fetch the feed; the short max-age keeps manifest.json's freshness
 # check honest instead of pinned at the edge.

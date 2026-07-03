@@ -79,6 +79,16 @@ export function categoryHref(slug: string): string {
   return `/categories/${slug}/`;
 }
 
+/**
+ * JSON serialization safe to inline inside a <script> element. JSON.stringify
+ * leaves "<" intact, so a package description containing "</script>" (PM data
+ * ultimately comes from third-party composer.json files) would otherwise
+ * terminate the JSON-LD block and inject markup. "<" is identical JSON.
+ */
+export function jsonForScript(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
 /** The packagemaven source's fetchedAt when it's marked stale, or null —
  * drives the site-wide "quality data as of <date>" banner. */
 export function staleNotice(feed: Feed): string | null {

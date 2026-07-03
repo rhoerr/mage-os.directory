@@ -2,11 +2,13 @@ import { z } from 'zod';
 import {
   buildStatus,
   categorySlug,
+  httpUrl,
   isoDateTime,
   packageName,
   partnerTier,
   qualityTier,
   vendorSlug,
+  versionString,
 } from './common.js';
 import { packageWarning } from './vendor-file.js';
 import { sourceStatus } from './source.js';
@@ -54,11 +56,11 @@ export const packageSummary = z.object({
   description: z.string(),
   /** Canonical category slugs; trust-file override wins over PM mapping. */
   categories: z.array(categorySlug),
-  repositoryUrl: z.url().nullable(),
-  latestVersion: z.string().nullable(),
+  repositoryUrl: httpUrl.nullable(),
+  latestVersion: versionString.nullable(),
   latestReleasedAt: isoDateTime.nullable(),
   /** Magento versions the latest release was verified against (PM test data). */
-  supportedMagento: z.array(z.string()),
+  supportedMagento: z.array(versionString),
   /**
    * Magento version → newest package release verified against it, derived
    * from PM's per-release test matrix (latest release included). Lets a
@@ -66,7 +68,7 @@ export const packageSummary = z.object({
    * when the latest release is only verified on 2.4.7. Empty when PM
    * supplied no compatibility data. Keys sorted newest Magento first.
    */
-  compatibility: z.record(z.string(), z.string()),
+  compatibility: z.record(versionString, versionString),
   abandoned: z.boolean().nullable(),
   quality: packageQuality,
   trust: packageTrust,
@@ -84,7 +86,7 @@ export const categoryEntry = z.object({
 export const vendorSummary = z.object({
   slug: vendorSlug,
   name: z.string(),
-  url: z.url().nullable(),
+  url: httpUrl.nullable(),
   trustedVendor: z.boolean(),
   partnerTier: partnerTier.nullable(),
   packageCount: z.number().int().min(0),
@@ -105,9 +107,9 @@ export type Feed = z.infer<typeof feed>;
 
 /** One row of the published per-release test matrix. */
 export const packageRelease = z.object({
-  version: z.string(),
+  version: versionString,
   releasedAt: isoDateTime.nullable(),
-  supportedMagento: z.array(z.string()),
+  supportedMagento: z.array(versionString),
 });
 export type PackageRelease = z.infer<typeof packageRelease>;
 
@@ -122,11 +124,11 @@ export const packageDetail = packageSummary.extend({
   releases: z.array(packageRelease),
   license: z.array(z.string()).nullable(),
   links: z.object({
-    packagist: z.url(),
-    packagemaven: z.url(),
-    repository: z.url().nullable(),
-    issues: z.url().nullable(),
-    docs: z.url().nullable(),
+    packagist: httpUrl,
+    packagemaven: httpUrl,
+    repository: httpUrl.nullable(),
+    issues: httpUrl.nullable(),
+    docs: httpUrl.nullable(),
   }),
 });
 export type PackageDetail = z.infer<typeof packageDetail>;

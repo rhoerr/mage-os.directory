@@ -6,6 +6,7 @@ import {
   editorialPicks,
   loadFeed,
   packageHref,
+  visiblePackages,
 } from '../lib/data.js';
 
 const feed = loadFeed();
@@ -15,7 +16,7 @@ const categories = feed.categories
   .sort((a, b) => b.packageCount - a.packageCount);
 
 // Hero counters (PM-style): visible modules by readiness.
-const visible = feed.packages.filter((p) => !p.trust.hidden);
+const visible = visiblePackages(feed);
 const readyCount = visible.filter((p) =>
   ['strict-compliant', 'no-errors', 'ready-to-install'].includes(p.quality.tier),
 ).length;

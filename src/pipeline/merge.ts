@@ -11,8 +11,10 @@ import type { RankingConfig } from '../schema/ranking-config.js';
 import { SCHEMA_VERSION } from '../schema/common.js';
 import { compareVersions, isNewer, parseVersion } from '../shared/version.js';
 import { buildRankingContext, rankPackage } from './rank.js';
+import { sanitizeReadmeHtml } from './sanitize.js';
 
-/** Per-package GitHub extras; both nullable, failure-tolerant. */
+/** Per-package GitHub extras; both nullable, failure-tolerant. The fetcher
+ * may hand over raw rendered HTML — merge sanitizes it before it is emitted. */
 export interface GithubExtras {
   readmeHtml: string | null;
   stars: number | null;
@@ -205,7 +207,7 @@ export function mergeToFeed(input: MergeInput): MergeOutput {
         ...summary,
         schemaVersion: SCHEMA_VERSION,
         generatedAt,
-        readmeHtml: a.extras.readmeHtml,
+        readmeHtml: sanitizeReadmeHtml(a.extras.readmeHtml),
         releases: a.releases,
         license: a.source.license,
         links: {
@@ -251,7 +253,7 @@ function sortWarnings(warnings: PackageWarning[]): PackageWarning[] {
 
 function deriveIssuesUrl(source: SourcePackage): string | null {
   if (source.repositoryUrl?.startsWith('https://github.com/')) {
-    return `${source.repositoryUrl.replace(/\/$/, '')}/issues`;
+    return `${source.repositoryUrl.replace(/\.git$/, '').replace(/\/$/, '')}/issues`;
   }
   return null;
 }

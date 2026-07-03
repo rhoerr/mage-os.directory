@@ -2,9 +2,11 @@ import { z } from 'zod';
 import {
   buildStatus,
   categorySlug,
+  httpUrl,
   isoDateTime,
   packageName,
   qualityTier,
+  versionString,
 } from './common.js';
 
 /**
@@ -16,10 +18,10 @@ import {
  */
 /** One row of PM's per-release test matrix. */
 export const sourceRelease = z.object({
-  version: z.string().min(1),
+  version: versionString,
   releasedAt: isoDateTime.nullable().default(null),
   /** Magento/Mage-OS versions PM verified this release against. */
-  supportedMagento: z.array(z.string()).default([]),
+  supportedMagento: z.array(versionString).default([]),
 });
 export type SourceRelease = z.infer<typeof sourceRelease>;
 
@@ -30,11 +32,11 @@ export const sourcePackage = z.object({
   description: z.string().default(''),
   /** PM's raw category label(s), mapped to canonical slugs during merge. */
   rawCategories: z.array(z.string()).default([]),
-  repositoryUrl: z.url().nullable().default(null),
-  latestVersion: z.string().nullable().default(null),
+  repositoryUrl: httpUrl.nullable().default(null),
+  latestVersion: versionString.nullable().default(null),
   latestReleasedAt: isoDateTime.nullable().default(null),
   /** Magento versions PM verified the *latest* release against, e.g. ["2.4.7"]. */
-  supportedMagento: z.array(z.string()).default([]),
+  supportedMagento: z.array(versionString).default([]),
   /**
    * Per-release test matrix (optional — see the PM data contract). When PM's
    * export only covers the latest release, this stays empty and per-Magento
