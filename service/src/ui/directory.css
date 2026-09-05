@@ -375,9 +375,11 @@
 
 .mosd-card {
   --mosd-rail: transparent;
+  --mosd-rail-edge: var(--mosd-border);
   --mosd-card-surface: var(--mosd-surface);
   background: var(--mosd-card-surface);
   border: 1px solid var(--mosd-border);
+  border-left-color: var(--mosd-rail-edge);
   border-radius: var(--mosd-radius);
   box-shadow: var(--mosd-elevation-1);
   display: flex;
@@ -394,8 +396,10 @@
   box-shadow: var(--mosd-elevation-2);
 }
 
-/* The rail is painted inside the card rather than as a border, so the
- * selection ring can sit at the edge without covering it. */
+/* The rail is a 3px bar flush with the card's left edge: the border pixel on
+ * that side takes the rail colour and the bar continues inward from it, so
+ * there is no hairline between the edge and the rail. The selection ring
+ * paints over the border pixel only, so a marked card's rail stays whole. */
 .mosd-card::before {
   background: var(--mosd-rail);
   bottom: 0;
@@ -413,29 +417,29 @@
  * most useful thing this view can tell anyone. */
 .mosd-is-installed {
   --mosd-rail: var(--mosd-ok);
+  --mosd-rail-edge: var(--mosd-ok);
   --mosd-card-surface: var(--mosd-ok-soft);
 }
 
 .mosd-is-update {
   --mosd-rail: var(--mosd-warn);
+  --mosd-rail-edge: var(--mosd-warn);
   --mosd-card-surface: var(--mosd-warn-soft);
 }
 
 .mosd-is-risk {
   --mosd-rail: var(--mosd-risk);
+  --mosd-rail-edge: var(--mosd-risk);
   --mosd-card-surface: var(--mosd-risk-soft);
 }
 
 /* Marking is the reader's own choice, so it reads as a selection ring rather
  * than a fourth rail — it has to stay legible on top of whichever rail is
- * already there. Only when no rail is competing does it also tint. */
+ * already there, which it is: the ring wraps all four sides and the rail
+ * runs inside it. Only when no rail is competing does it also tint. */
 .mosd-is-marked {
   outline: 2px solid var(--mosd-accent);
   outline-offset: -1px;
-}
-
-.mosd-is-marked::before {
-  left: 3px;
 }
 
 .mosd-is-marked-only {
