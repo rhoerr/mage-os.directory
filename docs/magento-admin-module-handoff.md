@@ -231,7 +231,7 @@ MageOSDirectory.mountDirectory(el: HTMLElement, options: {
                                        // directory URL, or your own proxy endpoint
   linkMode?: 'href' | 'event';         // default 'href'. Use 'event' in the admin
   baseUrl?: string;                    // href prefix when linkMode 'href'; default ""
-  initialFilters?: { category?: string; quality?: string[]; query?: string };
+  initialFilters?: { category?: string; query?: string; sort?: SortKey; flags?: FilterFlag[]; quality?: string[] };
   shadow?: boolean;                    // default true — keep it; see 5.4
   installed?: Record<string, string>;  // composer name → installed version, from composer.lock
   selectable?: boolean;                // default false — mark-for-install toggles + command tray
