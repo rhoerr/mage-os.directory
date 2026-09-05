@@ -218,7 +218,7 @@
     display: flex;
   }
 
-  .mosd-category-row {
+  .mosd-chip-row.mosd-category-row {
     display: none;
   }
 }
